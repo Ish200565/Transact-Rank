@@ -14,6 +14,9 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
+    with app.app_context():
+        db.create_all()
+
     app.register_blueprint(transactions_bp)
     app.register_blueprint(summary_bp)
     app.register_blueprint(ranking_bp)
