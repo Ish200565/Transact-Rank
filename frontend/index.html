@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TransactRank</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:     #0f0f0f;
+      --paper:   #f7f5f0;
+      --mid:     #e8e4dc;
+      --muted:   #9a9488;
+      --accent:  #c84b2f;
+      --green:   #2a7a4b;
+      --white:   #ffffff;
+      --radius:  6px;
+      --mono: 'DM Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      border-bottom: 1px solid var(--mid);
+      background: var(--paper);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      color: var(--ink);
+    }
+    .logo span { color: var(--accent); }
+
+    nav ul {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+
+    nav ul li a {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      transition: all 0.2s;
+    }
+    nav ul li a:hover, nav ul li a.active {
+      color: var(--ink);
+      background: var(--mid);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 48px 64px;
+      border-bottom: 1px solid var(--mid);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero-left h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(36px, 5vw, 58px);
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+    }
+
+    .hero-left h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero-left p {
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 300;
+      max-width: 400px;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--mid);
+      border: 1px solid var(--mid);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .stat-box {
+      background: var(--white);
+      padding: 28px 24px;
+    }
+
+    .stat-box .num {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--ink);
+      display: block;
+    }
+
+    .stat-box .lbl {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 4px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--mid);
+      border-bottom: 1px solid var(--mid);
+    }
+
+    .panel {
+      background: var(--paper);
+      padding: 40px 48px;
+    }
+
+    .panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    /* ── FORM ── */
+    .field {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--mid);
+      border-radius: var(--radius);
+      background: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      transition: border-color 0.2s;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--ink);
+    }
+
+    .type-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .type-btn {
+      padding: 10px;
+      border: 1px solid var(--mid);
+      border-radius: var(--radius);
+      background: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--muted);
+    }
+
+    .type-btn.active-credit {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+    }
+
+    .type-btn.active-debit {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: var(--ink);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── RESPONSE BOX ── */
+    .response-box {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      display: none;
+    }
+
+    .response-box.success {
+      background: #edf7f1;
+      border: 1px solid #b3dfc3;
+      color: #1a5c35;
+      display: block;
+    }
+
+    .response-box.error {
+      background: #fdf0ee;
+      border: 1px solid #f0bdb5;
+      color: #8c2a1a;
+      display: block;
+    }
+
+    /* ── SUMMARY ── */
+    .search-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .search-row input { flex: 1; }
+
+    .btn-secondary {
+      padding: 11px 20px;
+      background: var(--white);
+      border: 1px solid var(--mid);
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--ink);
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--mid);
+    }
+
+    .summary-card {
+      background: var(--white);
+      border: 1px solid var(--mid);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: none;
+    }
+
+    .summary-card.visible { display: block; }
+
+    .summary-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--mid);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .summary-header .uid {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+    }
+
+    .balance-badge {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .summary-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--mid);
+    }
+
+    .summary-item:nth-child(odd) {
+      border-right: 1px solid var(--mid);
+    }
+
+    .summary-item .val {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .summary-item .val.credit { color: var(--green); }
+    .summary-item .val.debit { color: var(--accent); }
+
+    .summary-item .key {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 2px;
+    }
+
+    /* ── RANKING ── */
+    .ranking-section {
+      padding: 40px 48px;
+      border-bottom: 1px solid var(--mid);
+    }
+
+    .ranking-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .btn-refresh {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--mid);
+      border-radius: 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+
+    .btn-refresh:hover { border-color: var(--ink); color: var(--ink); }
+
+    .rank-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .rank-table thead tr {
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .rank-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 0 16px 12px 0;
+    }
+
+    .rank-table td {
+      padding: 14px 16px 14px 0;
+      border-bottom: 1px solid var(--mid);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .rank-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--mid);
+      width: 40px;
+    }
+
+    .rank-num.top { color: var(--accent); }
+
+    .rank-uid {
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .rank-score {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .rank-vol {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 24px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    footer p {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    footer .tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--mid);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.25s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success { background: var(--ink); color: white; }
+    .toast.error   { background: var(--accent); color: white; }
+
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; }
+      .hero { grid-template-columns: 1fr; padding: 48px 20px; }
+      .main { grid-template-columns: 1fr; }
+      .panel { padding: 32px 20px; }
+      .ranking-section { padding: 32px 20px; }
+      footer { padding: 20px; flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Transact<span>Rank</span></div>
+  <ul>
+    <li><a href="#transact" class="active">Transact</a></li>
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#ranking">Ranking</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <h1>Move money.<br/><em>Track rank.</em><br/>Stay honest.</h1>
+    <p>A lightweight transaction engine with fair multi-factor ranking, duplicate prevention, and real-time balance tracking.</p>
+  </div>
+  <div class="hero-stats" id="heroStats">
+    <div class="stat-box">
+      <span class="num" id="statUsers">—</span>
+      <div class="lbl">Active Users</div>
+    </div>
+    <div class="stat-box">
+      <span class="num" id="statTxns">—</span>
+      <div class="lbl">Transactions</div>
+    </div>
+    <div class="stat-box">
+      <span class="num" id="statVol">—</span>
+      <div class="lbl">Total Volume</div>
+    </div>
+    <div class="stat-box">
+      <span class="num" id="statTop">—</span>
+      <div class="lbl">Top Ranked</div>
+    </div>
+  </div>
+</section>
+
+<!-- TRANSACT + SUMMARY -->
+<div class="main" id="transact">
+
+  <!-- LEFT: POST TRANSACTION -->
+  <div class="panel">
+    <div class="panel-title">New Transaction</div>
+
+    <div class="field">
+      <label>User ID</label>
+      <input type="text" id="userId" placeholder="e.g. alice@example.com"/>
+    </div>
+
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01"/>
+    </div>
+
+    <div class="field">
+      <label>Type</label>
+      <div class="type-toggle">
+        <button class="type-btn active-credit" id="btnCredit" onclick="setType('credit')">Credit</button>
+        <button class="type-btn" id="btnDebit" onclick="setType('debit')">Debit</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Request ID <span style="color:var(--muted);font-size:10px;text-transform:none">(auto-generated)</span></label>
+      <input type="text" id="requestId" placeholder="txn_..."/>
+    </div>
+
+    <button class="btn-primary" id="submitBtn" onclick="submitTransaction()">Send Transaction</button>
+
+    <div class="response-box" id="txnResponse"></div>
+  </div>
+
+  <!-- RIGHT: SUMMARY -->
+  <div class="panel" id="summary">
+    <div class="panel-title">User Summary</div>
+
+    <div class="search-row">
+      <input type="text" id="summaryUserId" placeholder="Enter user ID"/>
+      <button class="btn-secondary" onclick="fetchSummary()">Look up</button>
+    </div>
+
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-header">
+        <span class="uid" id="sUid">—</span>
+        <span class="balance-badge" id="sBalance">₹0</span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="val credit" id="sCredits">—</div>
+          <div class="key">Total Credits</div>
+        </div>
+        <div class="summary-item">
+          <div class="val debit" id="sDebits">—</div>
+          <div class="key">Total Debits</div>
+        </div>
+        <div class="summary-item">
+          <div class="val" id="sTxnCount">—</div>
+          <div class="key">Transactions</div>
+        </div>
+        <div class="summary-item">
+          <div class="val" id="sMember" style="font-size:13px;font-family:'DM Mono',monospace;font-weight:400">—</div>
+          <div class="key">Member Since</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="response-box" id="summaryError"></div>
+  </div>
+</div>
+
+<!-- RANKING -->
+<section class="ranking-section" id="ranking">
+  <div class="ranking-header">
+    <div class="panel-title" style="margin-bottom:0">Live Rankings</div>
+    <button class="btn-refresh" onclick="fetchRanking()">↻ Refresh</button>
+  </div>
+
+  <table class="rank-table" id="rankTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User</th>
+        <th>Score</th>
+        <th>Balance</th>
+        <th>Volume</th>
+        <th>Txns</th>
+      </tr>
+    </thead>
+    <tbody id="rankBody">
+      <tr><td colspan="6"><div class="empty-state"><p>Load rankings to see who's on top.</p></div></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  <p>TransactRank — Assignment Build</p>
+  <span class="tag">Flask · PostgreSQL · REST</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const BASE = 'http://127.0.0.1:5000';
+  let selectedType = 'credit';
+  let txnCounter = parseInt(localStorage.getItem('txnCounter') || '1');
+
+  // Auto-generate request ID on load
+  generateRequestId();
+
+  function generateRequestId() {
+    const id = 'txn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    document.getElementById('requestId').value = id;
+  }
+
+  function setType(type) {
+    selectedType = type;
+    const credit = document.getElementById('btnCredit');
+    const debit = document.getElementById('btnDebit');
+    credit.className = 'type-btn' + (type === 'credit' ? ' active-credit' : '');
+    debit.className = 'type-btn' + (type === 'debit' ? ' active-debit' : '');
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    setTimeout(() => t.className = 'toast', 2800);
+  }
+
+  function fmt(n) {
+    return '₹' + parseFloat(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  async function submitTransaction() {
+    const userId = document.getElementById('userId').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const requestId = document.getElementById('requestId').value.trim();
+    const box = document.getElementById('txnResponse');
+    const btn = document.getElementById('submitBtn');
+
+    box.className = 'response-box';
+    box.style.display = 'none';
+
+    if (!userId) { showToast('User ID is required', 'error'); return; }
+    if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(`${BASE}/transaction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, amount, type: selectedType, request_id: requestId })
+      });
+
+      const data = await res.json();
+
+      if (res.ok || res.status === 200) {
+        box.className = 'response-box success';
+        box.innerHTML = `✓ ${data.message}<br/>Transaction ID: ${data.transaction_id}<br/>New Balance: ${fmt(data.balance || 0)}`;
+        showToast('Transaction recorded');
+        generateRequestId();
+        fetchRanking();
+        updateHeroStats();
+      } else {
+        box.className = 'response-box error';
+        box.innerHTML = `✗ ${data.error}`;
+        showToast(data.error, 'error');
+      }
+      box.style.display = 'block';
+    } catch (e) {
+      box.className = 'response-box error';
+      box.innerHTML = '✗ Could not reach server. Is Flask running?';
+      box.style.display = 'block';
+      showToast('Server unreachable', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Send Transaction';
+  }
+
+  async function fetchSummary() {
+    const uid = document.getElementById('summaryUserId').value.trim();
+    const card = document.getElementById('summaryCard');
+    const errBox = document.getElementById('summaryError');
+
+    errBox.style.display = 'none';
+    errBox.className = 'response-box';
+
+    if (!uid) { showToast('Enter a user ID', 'error'); return; }
+
+    try {
+      const res = await fetch(`${BASE}/summary/${encodeURIComponent(uid)}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById('sUid').textContent = data.user_id;
+        document.getElementById('sBalance').textContent = fmt(data.balance);
+        document.getElementById('sCredits').textContent = fmt(data.total_credits);
+        document.getElementById('sDebits').textContent = fmt(data.total_debits);
+        document.getElementById('sTxnCount').textContent = data.transaction_count;
+        const d = new Date(data.member_since);
+        document.getElementById('sMember').textContent = d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+        card.className = 'summary-card visible';
+      } else {
+        card.className = 'summary-card';
+        errBox.className = 'response-box error';
+        errBox.innerHTML = '✗ ' + data.error;
+        errBox.style.display = 'block';
+      }
+    } catch (e) {
+      errBox.className = 'response-box error';
+      errBox.innerHTML = '✗ Could not reach server.';
+      errBox.style.display = 'block';
+    }
+  }
+
+  async function fetchRanking() {
+    try {
+      const res = await fetch(`${BASE}/ranking`);
+      const data = await res.json();
+      const tbody = document.getElementById('rankBody');
+
+      if (!res.ok || !Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><p>No users ranked yet. Submit a transaction first.</p></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(u => `
+        <tr>
+          <td class="rank-num ${u.rank <= 3 ? 'top' : ''}">${u.rank}</td>
+          <td class="rank-uid">${u.user_id}</td>
+          <td class="rank-score">${u.score}</td>
+          <td>${fmt(u.balance)}</td>
+          <td class="rank-vol">${fmt(u.total_credits + u.total_debits)}</td>
+          <td>${u.transaction_count}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      // silent fail on ranking
+    }
+  }
+
+  async function updateHeroStats() {
+    try {
+      const res = await fetch(`${BASE}/ranking`);
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+
+      const totalTxns = data.reduce((a, u) => a + u.transaction_count, 0);
+      const totalVol = data.reduce((a, u) => a + u.total_credits + u.total_debits, 0);
+
+      document.getElementById('statUsers').textContent = data.length;
+      document.getElementById('statTxns').textContent = totalTxns;
+      document.getElementById('statVol').textContent = '₹' + (totalVol / 1000).toFixed(1) + 'k';
+      document.getElementById('statTop').textContent = data.length > 0 ? data[0].user_id.split('@')[0] : '—';
+    } catch (e) {}
+  }
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('nav a').forEach(a => {
+    a.addEventListener('click', e => {
+      document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
+      e.target.classList.add('active');
+    });
+  });
+
+  // Enter key for summary
+  document.getElementById('summaryUserId').addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchSummary();
+  });
+
+  // Init
+  fetchRanking();
+  updateHeroStats();
+</script>
+</body>
+</html>
