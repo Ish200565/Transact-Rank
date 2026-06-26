@@ -660,7 +660,6 @@
   let selectedType = 'credit';
   let txnCounter = parseInt(localStorage.getItem('txnCounter') || '1');
 
-  // Auto-generate request ID on load
   generateRequestId();
 
   function generateRequestId() {
@@ -794,7 +793,7 @@
         </tr>
       `).join('');
     } catch (e) {
-      // silent fail on ranking
+      
     }
   }
 
@@ -814,20 +813,17 @@
     } catch (e) {}
   }
 
-  // Smooth scroll for nav links
   document.querySelectorAll('nav a').forEach(a => {
     a.addEventListener('click', e => {
       document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
       e.target.classList.add('active');
     });
   });
-
-  // Enter key for summary
   document.getElementById('summaryUserId').addEventListener('keydown', e => {
     if (e.key === 'Enter') fetchSummary();
   });
 
-  // Init
+  
   fetchRanking();
   updateHeroStats();
 </script>
