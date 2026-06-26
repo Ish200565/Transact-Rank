@@ -702,7 +702,7 @@
     btn.disabled = true;
     btn.textContent = 'Sending...';
 
-    try {
+try {
       const res = await fetch(`${BASE}/transaction`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -712,12 +712,18 @@
       const data = await res.json();
 
       if (res.ok || res.status === 200) {
-        box.className = 'response-box success';
-        box.innerHTML = `✓ ${data.message}<br/>Transaction ID: ${data.transaction_id}<br/>New Balance: ${fmt(data.balance || 0)}`;
-        showToast('Transaction recorded');
-        generateRequestId();
-        fetchRanking();
-        updateHeroStats();
+        if (data.message === 'duplicate request') {
+          box.className = 'response-box error';
+          box.innerHTML = `⚠ Duplicate request detected<br/>Transaction ID: ${data.transaction_id}<br/>No changes made.`;
+          showToast('Duplicate — skipped', 'error');
+        } else {
+          box.className = 'response-box success';
+          box.innerHTML = `✓ ${data.message}<br/>Transaction ID: ${data.transaction_id}<br/>New Balance: ${fmt(data.balance || 0)}`;
+          showToast('Transaction recorded');
+          generateRequestId();
+          fetchRanking();
+          updateHeroStats();
+        }
       } else {
         box.className = 'response-box error';
         box.innerHTML = `✗ ${data.error}`;
